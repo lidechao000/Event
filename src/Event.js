@@ -1,42 +1,37 @@
 export class Event {
   constructor() {
-    this.list = {};
+    this.events = {};
   }
   on(event, fn) {
-    this.list = {
-      ...this.list,
-      [event]: [
-        ...(this.list[event] || []),
-        fn
-      ]
-    };
+    (this.events[event] || (this.events[event] = [])).push(fn);
     return this;
   }
   once(event, fn) {
-    function on() {
+    const on = () => {
       this.off(event, on);
-      fn.apply(this, arguments)
+      fn.apply(this, arguments);
     }
+    on.fn = fn;
     this.on(event, on);
     return this;
   }
   off(event, fn) {
-    const fns = this.list[event];
+    const fns = this.events[event];
     if (!fns || !fns.length) return false;
     if (!fn) {
-      this.list[event] = [];
+      this.events[event] = [];
       return this;
     }
-    this.list[event] = fns.filter(cb => cb !== fn);
+    this.events[event] = fns.filter(cb => cb !== fn && cb.fn !== fn);
     return this;
   }
   emit() {
     const [event, ...args] = arguments;
-    const fns = this.list[event];
+    const fns = this.events[event];
     if (!fns || !fns.length) {
       return false;
     }
-    fns.forEach(fn => fn(arguments));
+    fns.forEach(fn => fn(args));
     return this;
   }
 };
